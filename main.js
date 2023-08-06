@@ -15,20 +15,20 @@ Coffee is ready!`
 );
 */
 
-/*
 function Ingredient(name, amount, unit) {
   this.name = name;
   this.amount = amount;
   this.unit = unit;
 }
-*/
 
 function Coffee(id, name, water, milk, coffeeBeans, price) {
   this.id = id;
   this.name = name;
-  this.water = water;
-  this.milk = milk
-  this.coffeeBeans = coffeeBeans;
+  this.ingredients = [
+    new Ingredient("water", water, "ml"),
+    new Ingredient("milk", milk, "ml"),
+    new Ingredient("coffeeBeans", coffeeBeans, "g"),
+  ];
   this.price = price;
 }
 
@@ -63,6 +63,7 @@ function CoffeeMachine(water, milk, coffeeBeans, dispCups, money) {
       "Write how many grams of coffee beans you want to add:\n"));
     this.dispCups += Number(input(
       "Write how many disposable cups you want to add:\n"));
+    console.log();
   };
 
   this.askForChoice = () => {
@@ -77,16 +78,28 @@ function CoffeeMachine(water, milk, coffeeBeans, dispCups, money) {
   
   this.processOrder = (id) => {
     const flavor = coffeeFlavors.find(f => f.id === id);
-    this.water -= flavor.water;
-    this.milk -= flavor.milk;
-    this.coffeeBeans -= flavor.coffeeBeans;
+    let insufficientIngredient;
+    flavor.ingredients.forEach(ingredient => {
+      if (this[ingredient.name] < ingredient.amount) {
+        insufficientIngredient = ingredient.name;
+      }
+    });
+    if (insufficientIngredient !== undefined) {
+      console.log(`Sorry, not enough ${insufficientIngredient}!\n`);
+      return;
+    }
+    console.log("I have enough resources, making you a coffee!\n");
+    flavor.ingredients.forEach(ingredient => {
+      this[ingredient.name] -= ingredient.amount;
+    });
     this.dispCups--;
     this.money += flavor.price;
   }
   
   this.sell = () => {
-    let choice = Number(this.askForChoice());
-    this.processOrder(choice);
+    let choice = this.askForChoice();
+    if (choice === "back") return;
+    this.processOrder(Number(choice));
   }
 
   this.giveMoney = () => {
@@ -96,29 +109,32 @@ function CoffeeMachine(water, milk, coffeeBeans, dispCups, money) {
   }
 
   this.promptUser = () => {
-    const prompt = "Write action (buy, fill, take):\n";
-    const choice = input(prompt);
+    let choice;
+    do {
+      console.log("Write action (buy, fill, take, remaining, exit):");
+      choice = input();
+      console.log();
 
-    switch (choice) {
-      case "buy":
-        this.sell();
-        break;
-      case "fill":
-        this.replenishSupplies();
-        break;
-      case "take":
-        this.giveMoney();
-        break;
-      default:
-        break;
-    }
-    
-    console.log();
-    this.printState();
+      switch (choice) {
+        case "buy":
+          this.sell();
+          break;
+        case "fill":
+          this.replenishSupplies();
+          break;
+        case "take":
+          this.giveMoney();
+          break;
+        case "remaining":
+          this.printState();
+          break;
+        default:
+          break;
+      }
+    } while (choice !== "exit");
   }
 
   this.start = () => {
-    this.printState();
     this.promptUser();
   }
   
